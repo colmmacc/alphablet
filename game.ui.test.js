@@ -76,7 +76,6 @@ describe('UI Integration Tests', () => {
       const letter = letterDisplay.textContent.trim();
       expect(letter).toHaveLength(1);
       expect(ALPHABET).toContain(letter);
-      expect(letterDisplay.getAttribute('draggable')).toBe('true');
     });
   });
 
@@ -94,14 +93,7 @@ describe('UI Integration Tests', () => {
     });
   });
 
-  describe('Letter display draggable after New Game', () => {
-    it('letter display has draggable="true" after starting game', () => {
-      clickNewGame();
-      vi.advanceTimersByTime(0);
-      const letterDisplay = document.getElementById('letter-display');
-      expect(letterDisplay.getAttribute('draggable')).toBe('true');
-    });
-
+  describe('Letter display interactive after New Game', () => {
     it('letter display contains a valid letter after starting game', () => {
       clickNewGame();
       vi.advanceTimersByTime(0);

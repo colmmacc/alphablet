@@ -324,8 +324,21 @@ function initGame() {
       return;
     }
     letterDisplay.textContent = letter;
-    letterDisplay.setAttribute('draggable', 'true');
+    // Only enable draggable on non-touch devices to avoid drag/click conflicts
+    if (!isTouchDevice()) {
+      letterDisplay.setAttribute('draggable', 'true');
+    } else {
+      letterDisplay.setAttribute('draggable', 'false');
+    }
     startTimer();
+  }
+
+  /**
+   * Detects if the device supports touch input.
+   */
+  function isTouchDevice() {
+    return (typeof window !== 'undefined') &&
+      ('ontouchstart' in window || navigator.maxTouchPoints > 0);
   }
 
   /**
