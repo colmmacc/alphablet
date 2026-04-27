@@ -12,29 +12,31 @@ const {
 function setupDOM() {
   document.body.innerHTML = `
     <div class="game-container">
-      <h1 class="game-title">Alphablet</h1>
-      <div class="top-controls">
-        <div class="mode-selector">
-          <input type="range" id="mode-slider" min="0" max="2" value="1" step="1">
-          <div class="mode-labels">
-            <span class="mode-label" data-mode="0">A Ok</span>
-            <span class="mode-label" data-mode="1">B Careful</span>
-            <span class="mode-label" data-mode="2">C of Trouble</span>
+      <div class="header-grid">
+        <h1 class="game-title">Alphablet</h1>
+        <div id="letter-display" class="letter-display" draggable="true"></div>
+        <button id="new-game-btn" class="new-game-btn">New<br>Game</button>
+        <div class="top-controls">
+          <div class="info-bar">
+            <div class="timer-section">
+              <span class="label">Time:</span>
+              <span id="timer-display" class="timer-display">0.00</span>
+            </div>
+            <div class="score-section">
+              <span class="label">Score:</span>
+              <span id="scoreboard" class="scoreboard">0</span>
+            </div>
+          </div>
+          <div class="mode-selector">
+            <input type="range" id="mode-slider" min="0" max="2" value="1" step="1">
+            <div class="mode-labels">
+              <span class="mode-label" data-mode="0">A Ok</span>
+              <span class="mode-label" data-mode="1">B Careful</span>
+              <span class="mode-label" data-mode="2">C of Trouble</span>
+            </div>
           </div>
         </div>
-        <button id="new-game-btn" class="new-game-btn">New Game</button>
       </div>
-      <div class="info-bar">
-        <div class="timer-section">
-          <span class="label">Time:</span>
-          <span id="timer-display" class="timer-display">0.00</span>
-        </div>
-        <div class="score-section">
-          <span class="label">Score:</span>
-          <span id="scoreboard" class="scoreboard">0</span>
-        </div>
-      </div>
-      <div id="letter-display" class="letter-display" draggable="true"></div>
       <div id="slot-bar" class="slot-bar"></div>
     </div>
   `;
@@ -121,9 +123,11 @@ describe('UI Integration Tests', () => {
       }
 
       // Placement visualization should exist
-      const viz = document.getElementById('placement-viz');
-      expect(viz).not.toBeNull();
-      expect(viz.querySelectorAll('.viz-col').length).toBe(26);
+      const vizTop = document.getElementById('placement-viz-top');
+      const vizBottom = document.getElementById('placement-viz');
+      expect(vizTop).not.toBeNull();
+      expect(vizBottom).not.toBeNull();
+      expect(vizTop.querySelectorAll('.viz-col').length + vizBottom.querySelectorAll('.viz-col').length).toBe(26);
 
       // Score bar should exist
       const scoreBar = document.getElementById('score-bar');
@@ -166,27 +170,23 @@ describe('UI Integration Tests', () => {
     });
   });
 
-  describe('Tap-to-place (mobile)', () => {
-    it('tapping letter display selects it, tapping slot places it', () => {
+  describe('Click-to-place', () => {
+    it('clicking a slot directly places the current letter', () => {
       clickNewGame();
       vi.advanceTimersByTime(0);
 
       const slotBar = document.getElementById('slot-bar');
       const letterDisplay = document.getElementById('letter-display');
       const firstLetter = letterDisplay.textContent.trim();
+      expect(firstLetter).toHaveLength(1);
 
-      // Tap the letter to select it
-      letterDisplay.click();
-      expect(letterDisplay.classList.contains('selected')).toBe(true);
-
-      // Tap a slot to place it
+      // Click a slot directly — no need to select the letter first
       vi.advanceTimersByTime(50);
       slotBar.children[0].click();
 
       // Letter should advance to next
       const nextLetter = letterDisplay.textContent.trim();
       expect(nextLetter).not.toBe('');
-      expect(letterDisplay.classList.contains('selected')).toBe(false);
     });
   });
 });

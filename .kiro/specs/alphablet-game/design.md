@@ -2,7 +2,7 @@
 
 ## Overview
 
-AlphaBlet is a single-player browser-based alphabet placement game implemented as a static HTML/CSS/JS application. The player places randomized letters into their correct alphabetical slot among 26 blank slots. The game supports drag-and-drop (desktop) and tap-to-place (mobile). It tracks time and accuracy per round, producing a composite score (`time + distance² × 8`, adjusted by a per-round mode multiplier). Three difficulty modes control visual feedback. The entire application runs client-side with no dependencies, suitable for GitHub Pages deployment.
+AlphaBlet is a single-player browser-based alphabet placement game. The player places randomized letters into their correct slot among 26 blank slots arranged in two rows of 13 (A–M, N–Z). The game supports click/tap-to-place on all devices and drag-and-drop on desktop. It tracks time and accuracy per round, producing a composite score (`time + distance² × 8`, adjusted by a per-round mode multiplier). Three difficulty modes control visual feedback. The entire application runs client-side with no dependencies.
 
 ## Architecture
 
@@ -15,8 +15,7 @@ graph TD
     C --> F[Shuffle Module]
     C --> G[Timer Module]
     C --> H[UI Controller]
-    H --> I[Drag & Drop Handlers]
-    H --> I2[Tap-to-Place Handlers]
+    H --> I[Click-to-Place + Drag & Drop]
     H --> J[Feedback Renderer]
     H --> K[Scoreboard Renderer]
     H --> L[Mode Manager]
@@ -27,8 +26,8 @@ graph TD
 
 ```
 /
-├── index.html          # Single HTML page with game layout
-├── style.css           # All styling including animations and mobile responsive
+├── index.html          # Game layout (3-column header grid + 2-row slot grid)
+├── style.css           # All styling, animations, responsive
 ├── game.js             # All game logic and UI control
 ├── game.test.js        # Property-based tests (fast-check)
 ├── game.ui.test.js     # UI integration tests (jsdom)
@@ -36,62 +35,47 @@ graph TD
 └── README.md           # Documentation
 ```
 
-### Design Decision: Single JS File
+## Layout
 
-All JavaScript lives in one `game.js` file. Rationale:
-- No build step required (static deployment constraint)
-- No module bundler needed
-- Internal module pattern provides logical separation
-- CommonJS exports at the bottom for Node.js test compatibility
+### Header Grid (3 columns × 3 rows)
+
+| | Col 1 (auto) | Col 2 (1fr) | Col 3 (auto) |
+|---|---|---|---|
+| Row 1 | New Game button | Title "Alphablet" | Letter display |
+| Row 2 | (spans from row 1) | Time / Score | (spans from row 1) |
+| Row 3 | (spans from row 1) | Mode slider | (spans from row 1) |
+
+New Game button and letter display each span all 3 rows. Center column items are centered. Time and score use `space-around` distribution with fixed-width fields (min-width 5.5em, tabular-nums, right-aligned).
+
+### Slot Grid
+
+Always two rows of 13: `grid-template-columns: repeat(13, 1fr)`. Slots have `aspect-ratio: 2/3` (taller than wide). Blank, unlabeled.
 
 ## Components and Interfaces
 
-### 1. Shuffle Module
+### Pure Functions (testable)
 
 ```javascript
-function generateShuffle() { }  // Fisher-Yates → string[26]
+function generateShuffle() { }                                    // Fisher-Yates → string[26]
+function calculateDistance(correctIndex, placedIndex) { }          // |correct - placed|, clamped 0-25
+function calculateScore(elapsedHundredths, distance) { }           // time + distance² × 8
+function calculateCumulativeScore(roundScores) { }                 // sum of array
+function getFeedbackColor(distance) { }                            // 0→green, 1-12→yellow-to-red, ≥13→red
+function formatTime(hundredths) { }                                // e.g., 1234 → "12.34"
+function createGameState() { }                                     // fresh state
+function advanceRound(state, slotIndex, elapsedHundredths, mode) { } // immutable update
+function getCurrentLetter(state) { }                               // shuffle[currentRound] or null
+function isGameComplete(state) { }                                 // currentRound >= 26
 ```
 
-### 2. Scoring Module
+### UI Controller
 
-```javascript
-function calculateDistance(correctIndex, placedIndex) { }  // |correct - placed|, clamped 0-25
-function calculateScore(elapsedHundredths, distance) { }   // time + distance² × 8
-function calculateCumulativeScore(roundScores) { }          // sum of array
-```
-
-### 3. Feedback Module
-
-```javascript
-function getFeedbackColor(distance) { }  // 0→green, 1-12→yellow-to-red interpolation, ≥13→red
-```
-
-### 4. Timer Module
-
-```javascript
-function formatTime(hundredths) { }  // e.g., 1234 → "12.34"
-```
-
-### 5. GameState Module
-
-```javascript
-function createGameState() { }                                    // fresh state
-function advanceRound(state, slotIndex, elapsedHundredths, mode) { }  // immutable update
-function getCurrentLetter(state) { }                              // shuffle[currentRound] or null
-function isGameComplete(state) { }                                // currentRound >= 26
-```
-
-### 6. UI Controller
-
-Orchestrates DOM updates and event handling:
-- Idle state on page load (no letter, not interactive until New Game clicked)
-- Mode slider with three positions (A Ok / B Careful / C of Trouble)
-- Dual interaction: drag-and-drop (desktop) + tap-to-select/tap-to-place (mobile)
-- Drag-over highlight cleanup (only one slot highlights at a time)
-- Per-round timer (resets each round) with cumulative total time display
-- Real-time scoreboard color based on projected tier
-- Placement visualization and score bar on game completion with fade-in animation
-- Mobile: two-row viz (above/below slots) with animated slot spacing
+- Idle state on load; New Game to start
+- `placeLetter(slotIndex, clickedSlot)` — shared by click and drag, stops timer, advances state, applies feedback + click-pop + scoreboard update
+- Click handling via event delegation on slot bar (registered once)
+- Drag-and-drop only on non-touch devices; single-slot highlight; nearest-slot fallback
+- Real-time scoreboard color via timer tick
+- Game-over: two-row placement viz with animated fade-in + score bar
 
 ## Data Models
 
@@ -118,7 +102,7 @@ const TOTAL_ROUNDS = 26;
 const MAX_DISTANCE_FOR_COLOR = 13;
 const HIGHLIGHT_DURATION_MS = 1000;
 const TIMER_INTERVAL_MS = 10;
-const MODE_MULTIPLIERS = [1.0, 0.8, 0.6];  // A Ok, B Careful, C of Trouble
+const MODE_MULTIPLIERS = [1.0, 0.8, 0.6];
 const SCORE_TIERS = [
   { label: 'E-Lite', min: 0, max: 2000, color: '#00c853' },
   { label: 'T-Rific', min: 2000, max: 4000, color: '#66bb6a' },
@@ -127,21 +111,13 @@ const SCORE_TIERS = [
 ];
 ```
 
-### Scoring Formula
+### Scoring
 
 ```
 raw_score = elapsed_time_hundredths + distance² × 8
 displayed_score = Σ(raw_score[i] × MODE_MULTIPLIERS[mode[i]])
+tier_scale = 0.8 / effective_mode_multiplier
 ```
-
-The additive formula ensures speed cannot cancel out inaccuracy. The distance² term makes large errors quadratically expensive.
-
-### Tier Boundary Scaling
-
-Tier boundaries are calibrated for B Careful (0.8×) and scale by `0.8 / effective_multiplier`:
-- A Ok (1.0×): boundaries × 0.8 (tighter — easier mode, higher bar)
-- B Careful (0.8×): boundaries × 1.0 (base)
-- C of Trouble (0.6×): boundaries × 1.33 (more generous — harder mode, lower bar)
 
 ## Difficulty Modes
 
@@ -151,82 +127,45 @@ Tier boundaries are calibrated for B Careful (0.8×) and scale by `0.8 / effecti
 | B Careful | Center (1, default) | Correct slots glow light blue | 0.8× |
 | C of Trouble | Right (2) | Nothing persists after flash | 0.6× |
 
-Mode is locked in per placement. Changing mid-game updates visual state of already-placed slots but doesn't retroactively change scores.
-
-## Interaction Model
-
-### Desktop: Drag-and-Drop
-- `dragstart` on letter display sets drag data and clears selection state
-- `dragover` on slots highlights only the current slot (clears all others first)
-- `drop` on slot or slot bar (nearest-slot fallback) triggers `placeLetter()`
-- `dragend` clears all drag-over highlights
-- `dragleave` removes highlight from individual slot
-
-### Mobile: Tap-to-Place
-- Tap letter display to toggle selected state (visual glow)
-- Tap any slot while letter is selected to place it via `placeLetter()`
-- Selected state clears on placement, new game, or re-tap to deselect
-
-### Shared: `placeLetter(slotIndex)`
-Both interaction models converge on a single `placeLetter()` function that stops the timer, advances game state, applies feedback, updates the scoreboard, and loads the next letter.
+Mode locked in per placement. Mid-game changes update visual state only.
 
 ## Game-Over Visualization
 
-### Placement Visualization
-
-**Desktop (>600px):** Single row below the slot bar, one column per slot. Fades in over 400ms.
-
-**Mobile (≤600px):** Two separate viz containers:
-- Top viz (slots 0–12) inserted before the slot bar, flipped so lines go upward with letters at top
-- Bottom viz (slots 13–25) inserted after the slot bar, lines go downward with letters at bottom
-
-Animation sequence:
-1. Slot bar gets `viz-active` class → CSS transition adds margin (300ms)
-2. After 300ms, viz containers fade in from opacity 0 → 1 (400ms)
-
-Each letter is connected to its drop slot by a line whose length is proportional to placement time (normalized to the slowest letter, max 120px). Line and letter colors use the feedback color for that round's distance.
+### Placement Viz (two-row, animated)
+- Top viz (slots 0–12): letters above, lines below (connecting to top row of slots)
+- Bottom viz (slots 13–25): lines above, letters below (connecting to bottom row of slots)
+- Animation: slot bar gets `viz-active` class (margin transition 300ms), then viz containers fade in (opacity 0→1, 400ms)
+- Line height proportional to placement time, normalized to slowest letter (max 120px)
+- Colors match feedback color for each round's distance
 
 ### Score Bar
-Horizontal bar with four colored segments (E-Lite, T-Rific, D-Cent, F-Ort). White marker at the player's score position. Tier name displayed below. Boundaries scale by effective mode multiplier.
+- Four colored segments (E-Lite, T-Rific, D-Cent, F-Ort)
+- White marker at player's score position; label shifts left when >85% to prevent overflow
+- Tier name displayed below
+- Boundaries scale by `0.8 / effective_mode_multiplier`
 
-## Mobile Responsive Design
+## Visual Feedback
 
-At ≤600px viewport width:
-- Slot bar switches from flex row to 13-column CSS grid (two rows: A–M, N–Z)
-- Compact spacing: reduced body padding, smaller title, smaller letter display (64px)
-- Mode slider: 140px width, 24px thumb for touch
-- `touch-action: manipulation` on game container
-- `-webkit-tap-highlight-color: transparent` on interactive elements
+- **Placement flash**: correct slot gets feedback color (green/yellow/red) for 1 second via inline style + setTimeout removal
+- **Click pop**: clicked slot scales to 1.4× for 500ms via CSS class toggle (`transform: scale(1.4)`, no layout reflow)
+- **Drag-over**: single-slot highlight (all others cleared on each dragover); all cleared on drop/dragend
+- **Score color**: scoreboard text color updates every 10ms based on projected final tier
 
 ## Correctness Properties
 
-1. **Shuffle permutation**: sorted = [A..Z], length 26, no duplicates
-2. **Letter order**: getCurrentLetter at round N = shuffle[N]
-3. **Score formula**: score = elapsed + distance² × 8
-4. **Score monotonicity**: d1 ≤ d2 → score(d1) ≤ score(d2)
-5. **Score lower bound**: score ≥ elapsed
-6. **Cumulative sum**: cumulative = Σ round scores
-7. **Color interpolation**: 0→green, 1-12→yellow-to-red, ≥13→red
-8. **Time format round-trip**: parse(format(n)) = n
-9. **Drop advances round**: round N → round N+1
-10. **Invalid drop preserves state**: no change without advanceRound
-11. **New game resets**: cumulativeScore=0, currentRound=0
+1. Shuffle permutation: sorted = [A..Z], length 26, no duplicates
+2. Letter order: getCurrentLetter at round N = shuffle[N]
+3. Score formula: score = elapsed + distance² × 8
+4. Score monotonicity: d1 ≤ d2 → score(d1) ≤ score(d2)
+5. Score lower bound: score ≥ elapsed
+6. Cumulative sum: cumulative = Σ round scores
+7. Color interpolation: 0→green, 1-12→yellow-to-red, ≥13→red
+8. Time format round-trip: parse(format(n)) = n
+9. Drop advances round: round N → round N+1
+10. Invalid drop preserves state: no change without advanceRound
+11. New game resets: cumulativeScore=0, currentRound=0
 
-## Error Handling
+## Testing
 
-| Scenario | Handling |
-|----------|----------|
-| Letter placed outside any slot | Return to display, no state change |
-| Letter placed in gap between slots | Delegate to nearest slot |
-| Multiple drag-over highlights | Cleared on every dragover, drop, and dragend |
-| No drag-and-drop support (mobile) | Tap-to-place fallback |
-| Timer overflow | JS number safe to 2^53 |
-| Invalid slot index | Clamped to 0-25 in calculateDistance |
-
-## Testing Strategy
-
-### Property-Based Tests (game.test.js)
-14 tests using fast-check with 100+ iterations each, covering all 11 correctness properties.
-
-### UI Integration Tests (game.ui.test.js)
-9 tests using vitest with jsdom: idle state, slot rendering, drag setup, game-over visualization, score bar, new game reset, and tap-to-place interaction.
+- **game.test.js**: 14 property-based tests (fast-check, 100+ iterations each)
+- **game.ui.test.js**: 8 UI integration tests (vitest + jsdom): idle state, slot rendering, letter display, game-over viz + score bar, new game reset, click-to-place

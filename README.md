@@ -1,21 +1,31 @@
 # Alphablet
 
-A fast-paced alphabet placement game. Place randomized letters into their correct slot — the faster and more accurate you are, the better your score. Works on desktop (drag-and-drop) and mobile (tap-to-place). Built as a zero-dependency static web app for GitHub Pages.
+A fast-paced alphabet placement game. Place randomized letters into their correct slot — the faster and more accurate you are, the better your score. Works on desktop and mobile. Built as a zero-dependency static web app for GitHub Pages.
 
 ## How to Play
 
-1. Click **New Game** to start. A random letter appears in the display area.
-2. Place it where you think it belongs among the 26 blank slots:
-   - **Desktop**: drag the letter to a slot
-   - **Mobile**: tap the letter to select it (it glows), then tap a slot to place it
+1. Click **New Game** to start. A random letter appears in the top-right corner.
+2. Click or tap any of the 26 blank slots (arranged in two rows: A–M, N–Z) to place the letter there.
 3. The letter snaps to its correct slot with color feedback:
    - **Green** = correct placement
    - **Yellow → Red** = incorrect, with intensity showing how far off you were
-4. Place all 26 letters. Lower score is better.
+4. The clicked slot pops briefly to confirm your selection.
+5. Place all 26 letters. Lower score is better.
+
+On desktop you can also drag the letter to a slot.
+
+## Layout
+
+The header is a 3-column grid:
+- **Left**: New Game button (spans full height)
+- **Center**: title, time/score, and mode slider (3 rows, all centered)
+- **Right**: current letter display (spans full height)
+
+Slots are always displayed in two rows of 13 (A–M on top, N–Z below), with a 2:3 aspect ratio.
 
 ## Difficulty Modes
 
-Use the slider at the top to choose your difficulty. The mode is locked in per letter at the moment you place it, so you can switch mid-game.
+Use the slider to choose your difficulty. The mode is locked in per letter at the moment you place it, so you can switch mid-game.
 
 | Mode | What you see | Score multiplier |
 |------|-------------|-----------------|
@@ -53,16 +63,9 @@ The running score changes color in real time to show which tier you're trending 
 
 ## Game-Over Visualization
 
-When the game ends, a placement visualization fades in showing where you placed each letter. Each letter appears connected to its drop slot by a line whose length is proportional to how long that letter took (normalized to the slowest). Colors match the feedback for that placement's accuracy.
+When the game ends, a placement visualization fades in around the slots. Row 1 (A–M) letters appear above the top row with lines going up; row 2 (N–Z) letters appear below with lines going down. Line length is proportional to placement time (normalized to the slowest letter). Colors match the feedback for each placement's accuracy. The slots animate apart to make room before the viz fades in.
 
-On mobile (two-row layout), row 1 (A–M) visualization appears above the slots with lines going up, and row 2 (N–Z) appears below with lines going down. The slots animate apart to make room before the viz fades in.
-
-## Mobile Support
-
-- **Tap-to-place**: tap the letter to select it, then tap a slot — works alongside drag-and-drop on desktop
-- **Two-row slot layout**: on screens ≤600px, slots split into A–M / N–Z rows for larger touch targets
-- **Larger slider thumb**: 24px for easy touch interaction
-- **Compact layout**: reduced padding, font sizes, and spacing on narrow screens
+A score bar below shows your final tier with a marker at your score position.
 
 ## Tech Stack
 

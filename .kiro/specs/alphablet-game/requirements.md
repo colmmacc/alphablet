@@ -2,191 +2,141 @@
 
 ## Introduction
 
-AlphaBlet is a single-player browser-based alphabet placement game. The player is presented with a randomized letter of the alphabet and must place it in the correct slot among 26 blank horizontal slots as quickly and accurately as possible. The game supports both drag-and-drop (desktop) and tap-to-place (mobile) interaction. Three difficulty modes control how much visual feedback the player receives. The game tracks time and accuracy, producing a composite score where lower is better. It runs entirely client-side and is deployable as a static site on GitHub Pages.
+AlphaBlet is a single-player browser-based alphabet placement game. The player is presented with a randomized letter and must place it in the correct slot among 26 blank slots (two rows of 13) as quickly and accurately as possible. The game supports click/tap-to-place on all devices and drag-and-drop on desktop. Three difficulty modes control visual feedback. The game tracks time and accuracy, producing a composite score where lower is better. It runs entirely client-side and is deployable as a static site on GitHub Pages.
 
 ## Glossary
 
-- **Game**: The AlphaBlet web application that manages the full gameplay loop.
-- **Letter_Display**: The UI component that shows the current randomized letter the player must place.
-- **Slot_Bar**: The row of 26 blank slots where the player places letters. Displays as a single row on desktop, two rows (A–M / N–Z) on mobile.
-- **Slot**: An individual placement target within the Slot_Bar, each corresponding to one letter of the alphabet.
-- **Timer**: The component that tracks total elapsed time across all rounds in hundredths of a second.
-- **Scoreboard**: The component that displays the player's running cumulative score, colored to indicate the projected tier.
-- **Distance**: The absolute difference between the index of the correct slot and the index of the slot where the player placed the letter (0 for correct placement).
-- **Round**: A single letter-placement attempt, from letter presentation through placement resolution.
-- **Shuffle**: A randomized permutation of the 26 letters that determines presentation order.
-- **Mode**: The difficulty setting (A Ok, B Careful, C of Trouble) that controls visual feedback and score multiplier.
-- **Mode_Multiplier**: A per-round scoring factor based on the mode at the time of placement: A Ok = 1.0, B Careful = 0.8, C of Trouble = 0.6.
-- **Score_Tier**: A rating category (E-Lite, T-Rific, D-Cent, F-Ort) based on the final score, with boundaries scaled by mode difficulty.
+- **Game**: The AlphaBlet web application.
+- **Letter_Display**: The UI component in the top-right that shows the current letter to place.
+- **Slot_Bar**: Two rows of 13 blank slots (A–M top, N–Z bottom) where the player places letters.
+- **Slot**: An individual placement target, taller than wide (2:3 aspect ratio).
+- **Timer**: Tracks total elapsed time across all rounds in hundredths of a second.
+- **Scoreboard**: Displays the running cumulative score, colored to indicate the projected tier.
+- **Distance**: Absolute difference between the correct slot index and the placed slot index.
+- **Round**: A single letter-placement attempt.
+- **Shuffle**: A randomized permutation of the 26 letters determining presentation order.
+- **Mode**: Difficulty setting (A Ok, B Careful, C of Trouble) controlling visual feedback and score multiplier.
+- **Mode_Multiplier**: Per-round scoring factor: A Ok = 1.0, B Careful = 0.8, C of Trouble = 0.6.
+- **Score_Tier**: Rating category (E-Lite, T-Rific, D-Cent, F-Ort) with boundaries scaled by mode.
 
 ## Requirements
 
-### Requirement 1: Game Layout and Title
-
-**User Story:** As a player, I want to see the game title and a clear layout, so that I understand what game I am playing and where to interact.
+### Requirement 1: Game Layout
 
 #### Acceptance Criteria
 
-1. THE Game SHALL display the title "Alphablet" at the top of the page.
-2. THE Game SHALL display a mode slider and New Game button at the top of the page.
-3. THE Game SHALL display the time and score above the Letter_Display.
-4. THE Game SHALL display the Letter_Display below the info bar.
-5. THE Game SHALL display the Slot_Bar below the Letter_Display as blank (unlabeled) Slots.
-6. THE Slots SHALL scale responsively to always fit without wrapping — single row on desktop, two rows (A–M / N–Z) on mobile (≤600px).
+1. THE header SHALL be a 3-column grid: New Game button (left, spanning 3 rows), title + time/score + mode slider (center, 3 rows, centered), letter display (right, spanning 3 rows).
+2. THE Slot_Bar SHALL always display as two rows of 13 slots using a CSS grid.
+3. THE Slots SHALL be blank (unlabeled) with a 2:3 aspect ratio (taller than wide).
+4. THE time and score displays SHALL use fixed-width formatting (min-width 5.5em, right-aligned, tabular-nums) to prevent layout shifts.
 
 ### Requirement 2: Letter Randomization
 
-**User Story:** As a player, I want the letters to appear in a random order, so that each game is a unique challenge.
-
 #### Acceptance Criteria
 
-1. WHEN a new game starts, THE Game SHALL generate a Shuffle of all 26 letters of the alphabet.
-2. THE Game SHALL present letters to the player one at a time in the order determined by the Shuffle.
+1. WHEN a new game starts, THE Game SHALL generate a Shuffle of all 26 letters.
+2. THE Game SHALL present letters one at a time in Shuffle order.
 3. THE Shuffle SHALL contain each of the 26 letters exactly once.
 
-### Requirement 3: Interaction — Drag-and-Drop (Desktop)
-
-**User Story:** As a desktop player, I want to drag the displayed letter to a slot, so that I can place it where I think it belongs.
+### Requirement 3: Interaction — Click/Tap-to-Place
 
 #### Acceptance Criteria
 
-1. THE Letter_Display SHALL present the current letter as a draggable element.
-2. WHEN the player drags the letter over a Slot, only that Slot SHALL highlight as a valid drop target.
-3. WHEN the player drops the letter onto a Slot, THE Game SHALL evaluate the placement and proceed to the next Round.
-4. IF the player drops the letter outside of any Slot, THEN THE Game SHALL return the letter to the Letter_Display without advancing the Round.
-5. THE Slot_Bar SHALL accept drops in the gaps between slots by delegating to the nearest slot.
-6. WHEN a drop or drag ends, all drag-over highlights SHALL be cleared.
+1. WHEN the player clicks or taps a Slot, THE Game SHALL place the current letter in that Slot and proceed to the next Round.
+2. THE clicked Slot SHALL display a pop animation (scale to 1.4× for 500ms) as visual confirmation.
+3. Click handling SHALL use event delegation on the Slot_Bar (registered once, not per new game) to prevent duplicate placements.
 
-### Requirement 4: Interaction — Tap-to-Place (Mobile)
-
-**User Story:** As a mobile player, I want to tap to select and place letters, since drag-and-drop doesn't work on touch devices.
+### Requirement 4: Interaction — Drag-and-Drop (Desktop)
 
 #### Acceptance Criteria
 
-1. WHEN the player taps the Letter_Display, THE letter SHALL toggle a selected state with a visual highlight.
-2. WHEN a letter is selected and the player taps a Slot, THE Game SHALL place the letter in that Slot and proceed to the next Round.
-3. THE selected state SHALL be cleared after placement, on New Game, or when tapped again to deselect.
+1. ON non-touch devices, THE Letter_Display SHALL be draggable.
+2. ON touch devices, THE Letter_Display SHALL NOT be draggable (to avoid drag/click conflicts).
+3. WHEN dragging, only one Slot SHALL highlight at a time (all others cleared on dragover).
+4. All drag-over highlights SHALL be cleared on drop and dragend.
+5. THE Slot_Bar SHALL accept drops in gaps between slots by delegating to the nearest slot.
 
-### Requirement 5: Correct Placement Feedback
-
-**User Story:** As a player, I want visual feedback when I place a letter correctly, so that I know I got it right.
-
-#### Acceptance Criteria
-
-1. WHEN the player places a letter in the correct Slot, THE correct Slot SHALL display a green highlight.
-2. THE highlight SHALL fade back to its original color after 1 second.
-
-### Requirement 6: Incorrect Placement Feedback
-
-**User Story:** As a player, I want visual feedback proportional to how wrong my placement was, so that I can gauge my accuracy.
+### Requirement 5: Placement Feedback
 
 #### Acceptance Criteria
 
-1. WHEN the player places a letter incorrectly, THE correct Slot SHALL display a color on a gradient from yellow (Distance 1) to red (Distance ≥ 13).
-2. THE Game SHALL interpolate linearly between yellow and red based on Distance, clamped at 13.
-3. THE highlight SHALL fade back to its original color after 1 second.
+1. WHEN placed correctly, THE correct Slot SHALL flash green for 1 second.
+2. WHEN placed incorrectly, THE correct Slot SHALL flash yellow-to-red (interpolated by distance, clamped at 13) for 1 second.
 
-### Requirement 7: Timer
-
-**User Story:** As a player, I want to see how long the game is taking, so that I can try to improve my speed.
+### Requirement 6: Timer
 
 #### Acceptance Criteria
 
-1. WHEN a new Round begins, THE per-round timer SHALL reset to zero and start counting.
-2. THE display SHALL show total elapsed time across all rounds in hundredths of a second (e.g., "12.34").
-3. WHEN the player places a letter, THE per-round timer SHALL stop for that Round.
-4. THE Timer SHALL update at a minimum frequency of 10 times per second.
+1. THE per-round timer SHALL reset each round; THE display SHALL show cumulative total time.
+2. THE Timer SHALL update at minimum 10 times per second.
+3. THE Timer SHALL stop on placement and restart on the next round.
 
-### Requirement 8: Scoring
-
-**User Story:** As a player, I want a score that reflects both my speed and accuracy, so that I have a single metric to optimize.
+### Requirement 7: Scoring
 
 #### Acceptance Criteria
 
-1. FOR ALL Rounds, THE Game SHALL compute the raw round score as: `elapsed_time_hundredths + distance² × 8`.
-2. THE displayed round score SHALL be the raw score multiplied by the Mode_Multiplier active at the time of placement.
-3. THE Scoreboard SHALL display the cumulative displayed score.
-4. THE Scoreboard SHALL update immediately after each Round completes.
-5. THE Scoreboard text color SHALL update in real time (every timer tick) to reflect the projected score tier.
+1. Raw round score = `elapsed_time_hundredths + distance² × 8`.
+2. Displayed round score = raw score × Mode_Multiplier at time of placement.
+3. THE Scoreboard SHALL display the cumulative displayed score, updated after each round.
+4. THE Scoreboard text color SHALL update every timer tick to reflect the projected score tier.
 
-### Requirement 9: Difficulty Modes
-
-**User Story:** As a player, I want to choose how much help I get, so that I can challenge myself at different levels.
+### Requirement 8: Difficulty Modes
 
 #### Acceptance Criteria
 
-1. THE Game SHALL provide three modes via a slider: A Ok (0), B Careful (1), C of Trouble (2).
-2. THE default mode SHALL be B Careful.
-3. IN A Ok mode, placed letters SHALL be shown in their correct slots.
-4. IN B Careful mode, correct slots SHALL display a light blue glow, no letter text.
-5. IN C of Trouble mode, no persistent visual indicator SHALL be shown after the feedback flash.
-6. THE mode SHALL be recorded per round at placement time and SHALL NOT retroactively change past scores.
-7. Changing the mode mid-game SHALL immediately update the visual state of already-placed slots.
+1. Three modes via slider: A Ok (0), B Careful (1, default), C of Trouble (2).
+2. A Ok: placed letters shown in correct slots. B Careful: correct slots glow light blue. C of Trouble: nothing persists.
+3. Mode is recorded per round at placement time; changing mid-game updates visual state but not past scores.
 
-### Requirement 10: Game Completion
-
-**User Story:** As a player, I want to know when the game is over and see how I did.
+### Requirement 9: Game Completion
 
 #### Acceptance Criteria
 
-1. WHEN all 26 letters are placed, THE Game SHALL display a placement visualization and score bar.
-2. THE placement visualization SHALL show each letter connected to its drop slot by a line proportional to placement time.
-3. ON mobile, row 1 (A–M) visualization SHALL appear above the slots (lines going up) and row 2 (N–Z) below (lines going down), with an animated transition.
-4. ON desktop, the visualization SHALL fade in below the slots.
-5. THE score bar SHALL display four tiers with a marker at the player's score and the tier name.
-6. THE score bar tier boundaries SHALL scale by the effective mode multiplier (base calibrated for B Careful).
+1. WHEN all 26 letters are placed, THE Game SHALL show a placement visualization and score bar.
+2. Row 1 viz (A–M) SHALL appear above the slots (letters above lines); row 2 viz (N–Z) below (lines then letters).
+3. THE slots SHALL animate apart (margin transition 300ms), then viz SHALL fade in (opacity transition 400ms).
+4. THE score bar SHALL show four tiers with a marker at the player's score. Marker label shifts left when near the right edge.
+5. Tier boundaries SHALL scale by `0.8 / effective_mode_multiplier`.
 
-### Requirement 11: New Game
-
-**User Story:** As a player, I want to start a new game at any time.
+### Requirement 10: New Game
 
 #### Acceptance Criteria
 
-1. THE Game SHALL provide a visible New Game button at the top.
+1. THE New Game button SHALL be in the left column of the header, spanning all 3 rows, with "New" and "Game" on separate lines.
 2. WHEN activated, THE Game SHALL reset score, timer, shuffle, slots, and clear any visualization or score bar.
 
-### Requirement 12: Idle State on Load
-
-**User Story:** As a player, I want the game to wait for me before starting.
+### Requirement 11: Idle State on Load
 
 #### Acceptance Criteria
 
 1. WHEN the page loads, THE Game SHALL display an idle state with no letter and the display not interactive.
 2. THE player SHALL click New Game to begin.
 
-### Requirement 13: Mobile Responsiveness
-
-**User Story:** As a mobile player, I want the game to be playable on my phone.
+### Requirement 12: Responsive Design
 
 #### Acceptance Criteria
 
-1. ON screens ≤600px, THE Slot_Bar SHALL display as two rows (A–M, N–Z) using CSS grid.
-2. THE layout SHALL use compact spacing, smaller fonts, and reduced padding on narrow screens.
-3. THE mode slider thumb SHALL be at least 24px for touch accessibility.
-4. THE Game SHALL use `touch-action: manipulation` to prevent unwanted zoom/scroll during play.
+1. THE two-row slot layout SHALL be used at all screen sizes.
+2. ON screens ≤600px: compact spacing, smaller fonts, smaller letter display and button.
+3. THE mode slider SHALL fill the available center column width (max 640px).
+4. `touch-action: manipulation` SHALL prevent unwanted zoom/scroll.
 
-### Requirement 14: Static Deployment Compatibility
-
-**User Story:** As a developer, I want the game to run entirely in the browser with no server-side code.
+### Requirement 13: Static Deployment
 
 #### Acceptance Criteria
 
 1. THE Game SHALL consist exclusively of static assets (HTML, CSS, JavaScript).
-2. THE Game SHALL require no server-side processing.
-3. THE Game SHALL function on GitHub Pages and in modern browsers without plugins.
+2. THE Game SHALL function on GitHub Pages and in modern browsers without plugins.
 
-### Requirement 15: Shuffle Integrity
-
-#### Acceptance Criteria
-
-1. THE Shuffle SHALL produce a permutation of exactly 26 unique letters.
-2. Sorting any Shuffle SHALL produce A through Z.
-3. Every Shuffle SHALL have length 26.
-
-### Requirement 16: Score Calculation Integrity
+### Requirement 14: Shuffle Integrity
 
 #### Acceptance Criteria
 
-1. FOR ALL Rounds, raw score = `elapsed_time_hundredths + distance² × 8`.
-2. FOR ALL Rounds, score ≥ elapsed time.
-3. FOR equal elapsed times, smaller Distance → smaller or equal score.
+1. Sorting any Shuffle SHALL produce A through Z. Length SHALL be 26.
+
+### Requirement 15: Score Calculation Integrity
+
+#### Acceptance Criteria
+
+1. Raw score = `elapsed_time_hundredths + distance² × 8`.
+2. Score ≥ elapsed time. Smaller distance → smaller or equal score for equal time.

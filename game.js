@@ -457,29 +457,6 @@ function initGame() {
       slot.addEventListener('dragover', handleDragOver);
       slot.addEventListener('dragleave', handleDragLeave);
       slot.addEventListener('drop', handleDrop);
-      slot.addEventListener('click', handleSlotTap);
-    });
-
-    // Also accept drops on the slot bar itself (gaps between slots)
-    // and find the nearest slot based on drop position.
-    slotBar.addEventListener('dragover', function (e) {
-      e.preventDefault();
-    });
-    slotBar.addEventListener('drop', function (e) {
-      // Only handle if the drop target is the slot bar itself, not a slot
-      if (e.target !== slotBar) return;
-      e.preventDefault();
-
-      if (!gameActive || !gameState) return;
-
-      var nearestSlot = findNearestSlot(e.clientX, e.clientY);
-      if (nearestSlot) {
-        // Delegate to the slot's drop handler
-        var dropEvent = new Event('drop', { bubbles: false });
-        dropEvent.dataTransfer = e.dataTransfer;
-        dropEvent.preventDefault = function () {};
-        nearestSlot.dispatchEvent(dropEvent);
-      }
     });
   }
 
@@ -564,7 +541,7 @@ function initGame() {
    * Places the current letter into the given slot index.
    * Shared by both drag-and-drop and tap-to-place.
    */
-  function placeLetter(slotIndex) {
+  function placeLetter(slotIndex, clickedSlot) {
     if (!gameActive || !gameState) return;
 
     stopTimer();
@@ -573,6 +550,14 @@ function initGame() {
     var currentLetter = getCurrentLetter(gameState);
     var correctIndex = ALPHABET.indexOf(currentLetter);
     var distance = calculateDistance(correctIndex, slotIndex);
+
+    // Pop the clicked slot (visual only, doesn't affect layout)
+    if (clickedSlot) {
+      clickedSlot.classList.add('click-pop');
+      setTimeout(function () {
+        clickedSlot.classList.remove('click-pop');
+      }, 500);
+    }
 
     gameState = advanceRound(gameState, slotIndex, elapsed, getMode());
 
@@ -594,7 +579,11 @@ function initGame() {
     if (!gameActive || !gameState) return;
     if (!getCurrentLetter(gameState)) return;
 
-    var slotIndex = parseInt(this.dataset.index, 10);
+    // Find the slot element — click might land on a child span
+    var slot = this.closest ? this : e.target.closest('.slot');
+    if (!slot) return;
+
+    var slotIndex = parseInt(slot.dataset.index, 10);
     if (isNaN(slotIndex)) return;
 
     letterSelected = false;
@@ -661,6 +650,12 @@ function initGame() {
     var markerLabel = document.createElement('div');
     markerLabel.className = 'score-bar-marker-label';
     markerLabel.textContent = String(score);
+    // Shift label left when near the right edge to prevent overflow
+    if (markerPos > 85) {
+      markerLabel.style.left = 'auto';
+      markerLabel.style.right = '0';
+      markerLabel.style.transform = 'none';
+    }
     marker.appendChild(markerLabel);
 
     track.appendChild(marker);
@@ -712,13 +707,7 @@ function initGame() {
       });
     }
 
-    var isMobile = (typeof window !== 'undefined') && window.innerWidth <= 600;
-
-    if (isMobile) {
-      buildMobileViz(slotData, maxTime, MAX_LINE_HEIGHT);
-    } else {
-      buildDesktopViz(slotData, maxTime, MAX_LINE_HEIGHT);
-    }
+    buildMobileViz(slotData, maxTime, MAX_LINE_HEIGHT);
   }
 
   function buildVizCol(slotData, slotIndex, maxTime, maxLineHeight, flipped) {
@@ -847,6 +836,34 @@ function initGame() {
   }
 
   // ---- Show idle state on page load (player clicks New Game to start) ----
+  // Slot bar delegated listeners (added once, not per new game)
+  slotBar.addEventListener('dragover', function (e) {
+    e.preventDefault();
+  });
+  slotBar.addEventListener('drop', function (e) {
+    if (e.target !== slotBar) return;
+    e.preventDefault();
+    if (!gameActive || !gameState) return;
+    var nearestSlot = findNearestSlot(e.clientX, e.clientY);
+    if (nearestSlot) {
+      var dropEvent = new Event('drop', { bubbles: false });
+      dropEvent.dataTransfer = e.dataTransfer;
+      dropEvent.preventDefault = function () {};
+      nearestSlot.dispatchEvent(dropEvent);
+    }
+  });
+  slotBar.addEventListener('click', function (e) {
+    if (!gameActive || !gameState) return;
+    if (!getCurrentLetter(gameState)) return;
+    var slot = e.target.closest ? e.target.closest('.slot') : null;
+    if (!slot) return;
+    var slotIndex = parseInt(slot.dataset.index, 10);
+    if (isNaN(slotIndex)) return;
+    letterSelected = false;
+    letterDisplay.classList.remove('selected');
+    placeLetter(slotIndex, slot);
+  });
+
   showIdleState();
 }
 
