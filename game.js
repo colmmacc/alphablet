@@ -589,10 +589,10 @@ function initGame() {
     letterDisplay.classList.toggle('selected', letterSelected);
   });
 
-  // Tap a slot to place the selected letter
+  // Tap/click a slot to place the current letter directly
   function handleSlotTap(e) {
-    if (!letterSelected) return;
     if (!gameActive || !gameState) return;
+    if (!getCurrentLetter(gameState)) return;
 
     var slotIndex = parseInt(this.dataset.index, 10);
     if (isNaN(slotIndex)) return;
