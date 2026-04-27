@@ -402,12 +402,14 @@ body {
   }
 
   .header-grid {
+    grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 0.3rem 0.5rem;
   }
 
   .letter-display {
     min-width: 50px;
     min-height: 50px;
+    max-width: 70px;
     font-size: 1.8rem;
   }
 
@@ -424,8 +426,8 @@ body {
   }
 
   .new-game-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
   }
 
   .slot .slot-letter {
