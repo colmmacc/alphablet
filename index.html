@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alphablet</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="game-container">
+    <h1 class="game-title">Alphablet</h1>
+
+    <div class="top-controls">
+      <div class="mode-selector">
+        <input type="range" id="mode-slider" min="0" max="2" value="1" step="1">
+        <div class="mode-labels">
+          <span class="mode-label" data-mode="0">A Ok</span>
+          <span class="mode-label" data-mode="1">B Careful</span>
+          <span class="mode-label" data-mode="2">C of Trouble</span>
+        </div>
+      </div>
+      <button id="new-game-btn" class="new-game-btn">New Game</button>
+    </div>
+
+    <div class="info-bar">
+      <div class="timer-section">
+        <span class="label">Time:</span>
+        <span id="timer-display" class="timer-display">0.00</span>
+      </div>
+      <div class="score-section">
+        <span class="label">Score:</span>
+        <span id="scoreboard" class="scoreboard">0</span>
+      </div>
+    </div>
+
+    <div id="letter-display" class="letter-display" draggable="true"></div>
+
+    <div id="slot-bar" class="slot-bar"></div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
